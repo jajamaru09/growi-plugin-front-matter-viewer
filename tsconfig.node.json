@@ -1,0 +1,22 @@
+{
+  // tsconfig.node.json — vite.config.ts（Node.js環境）向けの TypeScript 設定
+  // tsconfig.json（ブラウザ向け）とは別に分けることで、
+  // 設定ファイル自体の型補完・チェックをNode.js文脈で正しく行える。
+  "compilerOptions": {
+    // プロジェクト参照（references）機能を使うために必要。
+    // tsconfig.json から references でこのファイルを参照する際に使う。
+    "composite": true,
+
+    // vite.config.ts は ESモジュール形式で記述する
+    "module": "ESNext",
+
+    // バンドラ向けのモジュール解決（viteの設定ファイル自体もViteで処理される）
+    "moduleResolution": "bundler",
+
+    // デフォルトエクスポートを名前付きimportとして扱うことを許可する。
+    // CommonJSモジュール（Node.jsのレガシーモジュール）との互換性確保に使う。
+    "allowSyntheticDefaultImports": true
+  },
+  // vite.config.ts のみをこの設定の対象にする
+  "include": ["vite.config.ts"]
+}
