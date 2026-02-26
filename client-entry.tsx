@@ -29,24 +29,19 @@ const PLUGIN_NAME = 'growi-plugin-front-matter-viewer';
  * ページ本文を取得 → フロントマターを抽出 → パネルを表示/非表示する。
  */
 async function handlePageChange(ctx: GrowiPageContext): Promise<void> {
-    console.log(`[FM-DEBUG] handlePageChange`, ctx); // DEBUG
-
     // 編集モードではパネルを非表示にする
     if (ctx.mode === 'edit') {
-        console.log(`[FM-DEBUG] edit mode → skip`); // DEBUG
         unmountPanel();
         return;
     }
 
     const body = await fetchPageBody(ctx.pageId, ctx.revisionId);
-    console.log(`[FM-DEBUG] fetchPageBody result:`, body === null ? 'null' : `OK (${body.length} chars)`); // DEBUG
     if (!body) {
         unmountPanel();
         return;
     }
 
     const fm = extractFrontMatter(body);
-    console.log(`[FM-DEBUG] extractFrontMatter result:`, fm); // DEBUG
     if (!fm) {
         // フロントマターなし → パネルを消す
         unmountPanel();
@@ -61,12 +56,10 @@ const { start, stop } = createPageChangeListener(handlePageChange);
 
 // ─── プラグインライフサイクル ─────────────────────────────────────
 function activate(): void {
-    console.log(`[${PLUGIN_NAME}] activated`);
     start();
 }
 
 function deactivate(): void {
-    console.log(`[${PLUGIN_NAME}] deactivated`);
     stop();
     unmountPanel();
 }

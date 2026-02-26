@@ -60,8 +60,21 @@ const S = {
         border: '1px solid var(--bs-border-color)',
         borderRadius: '3px',
         cursor: 'pointer',
-        background: active ? 'var(--bs-primary)' : 'var(--bs-body-bg)',
-        color: active ? '#fff' : 'var(--bs-body-color)',
+        background: active ? 'var(--bs-btn-active-bg)' : 'var(--bs-btn-bg)',
+        color: active ? 'var(--bs-btn-active-color)' : 'var(--bs-btn-color)',
+    }),
+
+    chevron: (collapsed: boolean): React.CSSProperties => ({
+        padding: '2px 6px',
+        fontSize: '11px',
+        border: '1px solid var(--bs-border-color)',
+        borderRadius: '3px',
+        cursor: 'pointer',
+        background: 'var(--bs-btn-bg)',
+        color: 'var(--bs-btn-color)',
+        lineHeight: 1,
+        transform: collapsed ? 'rotate(-90deg)' : 'rotate(0deg)',
+        transition: 'transform 0.2s ease',
     }),
 
     body: {
@@ -223,6 +236,7 @@ function renderSequenceTable(parsed: unknown[]): React.ReactNode {
 
 export function FrontMatterPanel({ raw, parsed }: Props) {
     const [mode, setMode] = useState<ViewMode>('table');
+    const [collapsed, setCollapsed] = useState(false);
     const isArray = Array.isArray(parsed);
     const hasTable = isArray
         ? (parsed as unknown[]).length > 0
@@ -234,36 +248,49 @@ export function FrontMatterPanel({ raw, parsed }: Props) {
             <div style={S.header}>
                 <span style={S.title}>Front Matter</span>
                 <div style={S.toggleGroup}>
+                    {!collapsed && (
+                        <>
+                            <button
+                                style={S.btn(mode === 'table')}
+                                onClick={() => setMode('table')}
+                            >
+                                Table
+                            </button>
+                            <button
+                                style={S.btn(mode === 'yaml')}
+                                onClick={() => setMode('yaml')}
+                            >
+                                YAML
+                            </button>
+                        </>
+                    )}
                     <button
-                        style={S.btn(mode === 'table')}
-                        onClick={() => setMode('table')}
+                        style={S.chevron(collapsed)}
+                        onClick={() => setCollapsed((c) => !c)}
+                        title={collapsed ? '展開' : '折りたたむ'}
                     >
-                        Table
-                    </button>
-                    <button
-                        style={S.btn(mode === 'yaml')}
-                        onClick={() => setMode('yaml')}
-                    >
-                        YAML
+                        ▼
                     </button>
                 </div>
             </div>
 
             {/* 本文 */}
-            <div style={S.body}>
-                {mode === 'table' ? (
-                    hasTable ? (
-                        isArray
-                            ? renderSequenceTable(parsed as unknown[])
-                            : renderMappingTable(parsed as Record<string, unknown>)
+            {!collapsed && (
+                <div style={S.body}>
+                    {mode === 'table' ? (
+                        hasTable ? (
+                            isArray
+                                ? renderSequenceTable(parsed as unknown[])
+                                : renderMappingTable(parsed as Record<string, unknown>)
+                        ) : (
+                            // パース失敗時はYAML生文字列を表示
+                            <pre style={S.pre}>{raw}</pre>
+                        )
                     ) : (
-                        // パース失敗時はYAML生文字列を表示
                         <pre style={S.pre}>{raw}</pre>
-                    )
-                ) : (
-                    <pre style={S.pre}>{raw}</pre>
-                )}
-            </div>
+                    )}
+                </div>
+            )}
         </div>
     );
 }

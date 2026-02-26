@@ -34,27 +34,21 @@ export interface FrontMatterResult {
  * @returns フロントマターの生文字列とパース結果。存在しなければ null
  */
 export function extractFrontMatter(body: string): FrontMatterResult | null {
-    console.log(`[FM-DEBUG] extractFrontMatter body starts with:`, JSON.stringify(body.slice(0, 100))); // DEBUG
-
     // 文書の先頭が "---" で始まり、次の "---" で閉じられているブロックを検出する
     const match = body.match(/^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/);
-    console.log(`[FM-DEBUG] regex match:`, match ? `found (raw="${match[1].slice(0, 80)}")` : 'not found'); // DEBUG
     if (!match) return null;
 
     const raw = match[1];
 
     try {
         const parsed = parse(raw);
-        console.log(`[FM-DEBUG] yaml parse result type:`, typeof parsed, Array.isArray(parsed) ? '(array)' : ''); // DEBUG
         // null やスカラー値（文字列・数値・真偽値）は表示できないため除外する。
         // Mapping（object）と Sequence（array）はどちらも許可する。
         if (parsed == null || typeof parsed !== 'object') {
-            console.log(`[FM-DEBUG] parsed is null or scalar → return null`); // DEBUG
             return null;
         }
         return { raw, parsed: parsed as Record<string, unknown> | unknown[] };
-    } catch (e) {
-        console.warn(`[FM-DEBUG] yaml parse error:`, e); // DEBUG
+    } catch {
         // YAMLパース失敗時は生文字列だけ返す（表示で使える）
         return { raw, parsed: {} };
     }

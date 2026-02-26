@@ -21,36 +21,26 @@ export async function fetchPageBody(
     const rawId = pageId.startsWith('/') ? pageId.slice(1) : pageId;
 
     try {
-        let url: string;
         let body: string | null;
 
         if (revisionId) {
             // 過去リビジョン: GET /_api/v3/revisions/<revisionId>?pageId=<pageId>
-            url = `/_api/v3/revisions/${encodeURIComponent(revisionId)}?pageId=${encodeURIComponent(rawId)}`;
-            console.log(`[FM-DEBUG] fetch revision URL:`, url); // DEBUG
+            const url = `/_api/v3/revisions/${encodeURIComponent(revisionId)}?pageId=${encodeURIComponent(rawId)}`;
             const res = await fetch(url);
-            console.log(`[FM-DEBUG] revision response status:`, res.status); // DEBUG
             if (!res.ok) return null;
             const json = await res.json();
-            console.log(`[FM-DEBUG] revision json keys:`, Object.keys(json)); // DEBUG
-            console.log(`[FM-DEBUG] json.revision?.body (first 200):`, String(json?.revision?.body ?? '').slice(0, 200)); // DEBUG
             body = (json?.revision?.body as string) ?? null;
         } else {
             // 最新版: GET /_api/v3/page?pageId=<pageId>
-            url = `/_api/v3/page?pageId=${encodeURIComponent(rawId)}`;
-            console.log(`[FM-DEBUG] fetch page URL:`, url); // DEBUG
+            const url = `/_api/v3/page?pageId=${encodeURIComponent(rawId)}`;
             const res = await fetch(url);
-            console.log(`[FM-DEBUG] page response status:`, res.status); // DEBUG
             if (!res.ok) return null;
             const json = await res.json();
-            console.log(`[FM-DEBUG] page json keys:`, Object.keys(json)); // DEBUG
-            console.log(`[FM-DEBUG] json.page?.revision?.body (first 200):`, String(json?.page?.revision?.body ?? '').slice(0, 200)); // DEBUG
             body = (json?.page?.revision?.body as string) ?? null;
         }
 
         return body;
-    } catch (e) {
-        console.error(`[FM-DEBUG] fetchPageBody error:`, e); // DEBUG
+    } catch {
         return null;
     }
 }
