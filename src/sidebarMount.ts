@@ -49,8 +49,12 @@ let container: HTMLElement | null = null;
 function findSidebar(): HTMLElement | null {
     for (const selector of SIDEBAR_SELECTORS) {
         const el = document.querySelector<HTMLElement>(selector);
-        if (el) return el;
+        if (el) {
+            console.log(`[FM-DEBUG] sidebar found with selector: "${selector}"`, el); // DEBUG
+            return el;
+        }
     }
+    console.warn(`[FM-DEBUG] sidebar not found with any selector → using fallback`); // DEBUG
     return null;
 }
 
@@ -100,15 +104,18 @@ function ensureFallbackContainer(): HTMLElement {
  * すでにマウント済みの場合は内容を更新する。
  */
 export function mountPanel(fm: FrontMatterResult): void {
+    console.log(`[FM-DEBUG] mountPanel called, fm.raw:`, fm.raw.slice(0, 80)); // DEBUG
     const sidebar = findSidebar();
     container = sidebar
         ? ensureContainerIn(sidebar)
         : ensureFallbackContainer();
 
+    console.log(`[FM-DEBUG] container element:`, container); // DEBUG
     if (!root) {
         root = createRoot(container);
     }
     root.render(createElement(FrontMatterPanel, fm));
+    console.log(`[FM-DEBUG] root.render() called`); // DEBUG
 }
 
 /**
