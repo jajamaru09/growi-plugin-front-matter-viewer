@@ -20,6 +20,15 @@ interface Props {
 
 // ハードコードの色値は使用せず、GROWIが提供する Bootstrap 5 CSS 変数を参照する。
 // data-bs-theme 属性の切り替えだけでライト/ダークモードに自動追従する。
+
+/** btn / chevron で共通するベーススタイル */
+const BASE_BTN: React.CSSProperties = {
+    fontSize: '11px',
+    border: '1px solid var(--bs-border-color)',
+    borderRadius: '3px',
+    cursor: 'pointer',
+};
+
 const S = {
     panel: {
         margin: '8px 0',
@@ -55,21 +64,15 @@ const S = {
     } as React.CSSProperties,
 
     btn: (active: boolean): React.CSSProperties => ({
+        ...BASE_BTN,
         padding: '2px 8px',
-        fontSize: '11px',
-        border: '1px solid var(--bs-border-color)',
-        borderRadius: '3px',
-        cursor: 'pointer',
         background: active ? 'var(--bs-primary-border-subtle)' : 'var(--bs-btn-bg)',
         color: active ? 'var(--bs-btn-active-color)' : 'var(--bs-btn-color)',
     }),
 
     chevron: (collapsed: boolean): React.CSSProperties => ({
+        ...BASE_BTN,
         padding: '2px 6px',
-        fontSize: '11px',
-        border: '1px solid var(--bs-border-color)',
-        borderRadius: '3px',
-        cursor: 'pointer',
         background: 'var(--bs-btn-bg)',
         color: 'var(--bs-btn-color)',
         lineHeight: 1,
@@ -128,13 +131,21 @@ const S = {
     } as React.CSSProperties,
 };
 
+// ─── ヘルパー ─────────────────────────────────────────────────────
+
+/**
+ * null・string・number・boolean をプリミティブと見なす。
+ * Date やオブジェクトは object なので false を返す。
+ */
+const isPrimitive = (v: unknown): boolean => v === null || typeof v !== 'object';
+
 // ─── 値のレンダリング（再帰） ─────────────────────────────────────
 
 /**
  * 任意のYAML値を React ノードに変換する。
  * オブジェクト・配列はネストしたテーブルで表示する。
  */
-function renderValue(value: unknown, depth = 0): React.ReactNode {
+function renderValue(value: unknown): React.ReactNode {
     // null
     if (value === null) {
         return <span style={S.badge}>null</span>;
@@ -159,11 +170,8 @@ function renderValue(value: unknown, depth = 0): React.ReactNode {
     if (Array.isArray(value)) {
         if (value.length === 0) return <span style={S.badge}>[]</span>;
 
-        // すべてプリミティブなら1行で表示
-        const allPrimitive = value.every(
-            (v) => v === null || (typeof v !== 'object' && !(v instanceof Date)),
-        );
-        if (allPrimitive) {
+        // すべてプリミティブなら1行で表示（Date は inline 表示が不自然なためネストにする）
+        if (value.every(isPrimitive)) {
             return value.map(String).join(', ');
         }
 
@@ -174,7 +182,7 @@ function renderValue(value: unknown, depth = 0): React.ReactNode {
                     {value.map((item, i) => (
                         <tr key={i}>
                             <th style={{ ...S.th, width: '20px' }}>{i}</th>
-                            <td style={S.td}>{renderValue(item, depth + 1)}</td>
+                            <td style={S.td}>{renderValue(item)}</td>
                         </tr>
                     ))}
                 </tbody>
@@ -192,7 +200,7 @@ function renderValue(value: unknown, depth = 0): React.ReactNode {
                 {entries.map(([k, v]) => (
                     <tr key={k}>
                         <th style={S.th}>{k}</th>
-                        <td style={S.td}>{renderValue(v, depth + 1)}</td>
+                        <td style={S.td}>{renderValue(v)}</td>
                     </tr>
                 ))}
             </tbody>
@@ -202,45 +210,12 @@ function renderValue(value: unknown, depth = 0): React.ReactNode {
 
 // ─── メインコンポーネント ─────────────────────────────────────────
 
-/** root が Mapping（オブジェクト）のテーブル描画 */
-function renderMappingTable(parsed: Record<string, unknown>): React.ReactNode {
-    return (
-        <table style={S.table}>
-            <tbody>
-                {Object.entries(parsed).map(([key, value]) => (
-                    <tr key={key}>
-                        <th style={S.th}>{key}</th>
-                        <td style={S.td}>{renderValue(value)}</td>
-                    </tr>
-                ))}
-            </tbody>
-        </table>
-    );
-}
-
-/** root が Sequence（配列）のテーブル描画 */
-function renderSequenceTable(parsed: unknown[]): React.ReactNode {
-    return (
-        <table style={S.table}>
-            <tbody>
-                {parsed.map((item, i) => (
-                    <tr key={i}>
-                        <th style={{ ...S.th, width: '20px' }}>{i}</th>
-                        <td style={S.td}>{renderValue(item)}</td>
-                    </tr>
-                ))}
-            </tbody>
-        </table>
-    );
-}
-
 export function FrontMatterPanel({ raw, parsed }: Props) {
     const [mode, setMode] = useState<ViewMode>('table');
     const [collapsed, setCollapsed] = useState(false);
-    const isArray = Array.isArray(parsed);
-    const hasTable = isArray
-        ? (parsed as unknown[]).length > 0
-        : Object.keys(parsed as Record<string, unknown>).length > 0;
+    const hasEntries = Array.isArray(parsed)
+        ? parsed.length > 0
+        : Object.keys(parsed).length > 0;
 
     return (
         <div style={S.panel}>
@@ -278,10 +253,8 @@ export function FrontMatterPanel({ raw, parsed }: Props) {
             {!collapsed && (
                 <div style={S.body}>
                     {mode === 'table' ? (
-                        hasTable ? (
-                            isArray
-                                ? renderSequenceTable(parsed as unknown[])
-                                : renderMappingTable(parsed as Record<string, unknown>)
+                        hasEntries ? (
+                            renderValue(parsed)
                         ) : (
                             // パース失敗時はYAML生文字列を表示
                             <pre style={S.pre}>{raw}</pre>

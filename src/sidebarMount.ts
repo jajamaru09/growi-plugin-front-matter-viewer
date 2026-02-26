@@ -45,45 +45,29 @@ let container: HTMLElement | null = null;
 // ─── 内部ユーティリティ ───────────────────────────────────────────
 
 /**
- * サイドバー要素を探す。見つからなければ null を返す。
+ * コンテナdivを取得または作成して返す。
+ * - すでに存在する場合はそれを返す（getElementById で判定）
+ * - サイドバーが見つかれば直前（兄弟）に挿入する
+ * - 見つからなければ画面右下にフローティングパネルとして追加する
  */
-function findSidebar(): HTMLElement | null {
-    for (const selector of SIDEBAR_SELECTORS) {
-        const el = document.querySelector<HTMLElement>(selector);
-        if (el) return el;
-    }
-    return null;
-}
-
-/**
- * 指定した要素の直前（兄弟要素として）にコンテナdivを挿入して返す。
- * target.parentElement が null の場合はフォールバックコンテナを返す。
- */
-function ensureContainerBefore(target: HTMLElement): HTMLElement {
-    const existing = document.getElementById(CONTAINER_ID);
-    if (existing) return existing;
-
-    const parent = target.parentElement;
-    if (!parent) {
-        return ensureFallbackContainer();
-    }
-
-    const div = document.createElement('div');
-    div.id = CONTAINER_ID;
-    parent.insertBefore(div, target);
-    return div;
-}
-
-/**
- * サイドバーが見つからない場合のフォールバック:
- * 画面右下に固定表示するフローティングパネルとして追加する。
- */
-function ensureFallbackContainer(): HTMLElement {
+function ensureContainer(): HTMLElement {
     const existing = document.getElementById(CONTAINER_ID);
     if (existing) return existing;
 
     const div = document.createElement('div');
     div.id = CONTAINER_ID;
+
+    const sidebar = SIDEBAR_SELECTORS.reduce<HTMLElement | null>(
+        (found, sel) => found ?? document.querySelector<HTMLElement>(sel),
+        null,
+    );
+    const parent = sidebar?.parentElement;
+    if (parent) {
+        parent.insertBefore(div, sidebar);
+        return div;
+    }
+
+    // フォールバック: 画面右下に固定表示
     Object.assign(div.style, {
         position: 'fixed',
         bottom: '20px',
@@ -108,8 +92,7 @@ function ensureFallbackContainer(): HTMLElement {
  * すでにマウント済みの場合は内容を更新する。
  */
 export function mountPanel(fm: FrontMatterResult): void {
-    const sidebar = findSidebar();
-    const c = sidebar ? ensureContainerBefore(sidebar) : ensureFallbackContainer();
+    const c = ensureContainer();
     container = c;
 
     if (!root) {
