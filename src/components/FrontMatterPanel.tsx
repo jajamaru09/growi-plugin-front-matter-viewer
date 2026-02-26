@@ -18,14 +18,18 @@ interface Props {
 
 // ─── スタイル定数 ─────────────────────────────────────────────────
 
+// ハードコードの色値は使用せず、GROWIが提供する Bootstrap 5 CSS 変数を参照する。
+// data-bs-theme 属性の切り替えだけでライト/ダークモードに自動追従する。
 const S = {
     panel: {
         margin: '8px 0',
-        border: '1px solid #dee2e6',
+        border: '1px solid var(--bs-border-color)',
         borderRadius: '4px',
         fontSize: '12px',
         fontFamily: 'inherit',
         overflow: 'hidden',
+        background: 'var(--bs-body-bg)',
+        color: 'var(--bs-body-color)',
     } as React.CSSProperties,
 
     header: {
@@ -33,8 +37,8 @@ const S = {
         alignItems: 'center',
         justifyContent: 'space-between',
         padding: '6px 10px',
-        background: '#f8f9fa',
-        borderBottom: '1px solid #dee2e6',
+        background: 'var(--bs-tertiary-bg)',
+        borderBottom: '1px solid var(--bs-border-color)',
     } as React.CSSProperties,
 
     title: {
@@ -42,7 +46,7 @@ const S = {
         fontSize: '11px',
         textTransform: 'uppercase' as const,
         letterSpacing: '0.05em',
-        color: '#6c757d',
+        color: 'var(--bs-secondary-color)',
     } as React.CSSProperties,
 
     toggleGroup: {
@@ -53,11 +57,11 @@ const S = {
     btn: (active: boolean): React.CSSProperties => ({
         padding: '2px 8px',
         fontSize: '11px',
-        border: '1px solid #ced4da',
+        border: '1px solid var(--bs-border-color)',
         borderRadius: '3px',
         cursor: 'pointer',
-        background: active ? '#0d6efd' : '#fff',
-        color: active ? '#fff' : '#495057',
+        background: active ? 'var(--bs-primary)' : 'var(--bs-body-bg)',
+        color: active ? '#fff' : 'var(--bs-body-color)',
     }),
 
     body: {
@@ -75,17 +79,17 @@ const S = {
         padding: '3px 6px',
         textAlign: 'left' as const,
         verticalAlign: 'top',
-        color: '#495057',
+        color: 'var(--bs-secondary-color)',
         whiteSpace: 'nowrap' as const,
         fontWeight: 'normal',
-        borderBottom: '1px solid #e9ecef',
+        borderBottom: '1px solid var(--bs-border-color)',
         width: '35%',
     } as React.CSSProperties,
 
     td: {
         padding: '3px 6px',
         verticalAlign: 'top',
-        borderBottom: '1px solid #e9ecef',
+        borderBottom: '1px solid var(--bs-border-color)',
         wordBreak: 'break-all' as const,
     } as React.CSSProperties,
 
@@ -93,7 +97,8 @@ const S = {
         margin: 0,
         padding: '4px',
         fontSize: '11px',
-        background: '#f8f9fa',
+        background: 'var(--bs-tertiary-bg)',
+        color: 'var(--bs-body-color)',
         borderRadius: '3px',
         overflowX: 'auto',
         whiteSpace: 'pre-wrap' as const,
@@ -105,8 +110,8 @@ const S = {
         padding: '1px 5px',
         borderRadius: '10px',
         fontSize: '10px',
-        background: '#e9ecef',
-        color: '#6c757d',
+        background: 'var(--bs-secondary-bg)',
+        color: 'var(--bs-secondary-color)',
     } as React.CSSProperties,
 };
 
@@ -155,7 +160,7 @@ function renderValue(value: unknown, depth = 0): React.ReactNode {
                 <tbody>
                     {value.map((item, i) => (
                         <tr key={i}>
-                            <th style={{ ...S.th, width: '20px', color: '#adb5bd' }}>{i}</th>
+                            <th style={{ ...S.th, width: '20px' }}>{i}</th>
                             <td style={S.td}>{renderValue(item, depth + 1)}</td>
                         </tr>
                     ))}
@@ -207,7 +212,7 @@ function renderSequenceTable(parsed: unknown[]): React.ReactNode {
             <tbody>
                 {parsed.map((item, i) => (
                     <tr key={i}>
-                        <th style={{ ...S.th, width: '20px', color: '#adb5bd' }}>{i}</th>
+                        <th style={{ ...S.th, width: '20px' }}>{i}</th>
                         <td style={S.td}>{renderValue(item)}</td>
                     </tr>
                 ))}

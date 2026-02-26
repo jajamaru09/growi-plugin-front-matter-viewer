@@ -99,7 +99,8 @@ function ensureFallbackContainer(): HTMLElement {
         zIndex: '9999',
         boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
         borderRadius: '4px',
-        background: '#fff',
+        background: 'var(--bs-body-bg)',
+        border: '1px solid var(--bs-border-color)',
     });
     document.body.appendChild(div);
     return div;
