@@ -60,7 +60,7 @@ const S = {
         border: '1px solid var(--bs-border-color)',
         borderRadius: '3px',
         cursor: 'pointer',
-        background: active ? 'var(--bs-btn-active-bg)' : 'var(--bs-btn-bg)',
+        background: active ? 'var(--bs-primary-border-subtle)' : 'var(--bs-btn-bg)',
         color: active ? 'var(--bs-btn-active-color)' : 'var(--bs-btn-color)',
     }),
 
