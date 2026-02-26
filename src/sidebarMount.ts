@@ -35,6 +35,10 @@ const SIDEBAR_SELECTORS = [
     '.grw-sidebar',
     '#grw-sidebar',
     ' d-flex flex-column gap-2',
+    '.revision-toc-container',
+    '[class*="TableOfContents"]',
+    '.page-side-contents',
+    '#revision-toc',
 ];
 
 // ─── モジュールスコープ状態 ───────────────────────────────────────
