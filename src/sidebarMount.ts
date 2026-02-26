@@ -27,16 +27,19 @@ const CONTAINER_ID = 'growi-plugin-front-matter-viewer-container';
  * サイドバーとして試みるセレクタの候補リスト（優先度順）。
  * GROWI のバージョンアップで変わる可能性があるため、実際のDOMを確認して調整すること。
  */
+/**
+ * 実機確認で動作したセレクタを先頭に置く（優先度順）。
+ * ここで見つかった要素の「直前」にコンテナを挿入する。
+ */
 const SIDEBAR_SELECTORS = [
+    '[class*="TableOfContents"]',
     '[data-testid="grw-sidebar-contents-scroll-container"]',
     '[data-testid="grw-side-contents"]',
     '#grw-sidebar-contents',
     '.grw-sidebar-contents-scroll-container',
     '.grw-sidebar',
     '#grw-sidebar',
-    ' d-flex flex-column gap-2',
     '.revision-toc-container',
-    '[class*="TableOfContents"]',
     '.page-side-contents',
     '#revision-toc',
 ];
@@ -64,15 +67,22 @@ function findSidebar(): HTMLElement | null {
 }
 
 /**
- * 指定した親要素内にコンテナdivを確保して返す。
+ * 指定した要素の直前（兄弟要素として）にコンテナdivを挿入して返す。
+ * target.parentElement が null の場合はフォールバックコンテナを返す。
  */
-function ensureContainerIn(parent: HTMLElement): HTMLElement {
+function ensureContainerBefore(target: HTMLElement): HTMLElement {
     const existing = document.getElementById(CONTAINER_ID);
     if (existing) return existing;
 
+    const parent = target.parentElement;
+    if (!parent) {
+        console.warn(`[FM-DEBUG] target has no parentElement → using fallback`); // DEBUG
+        return ensureFallbackContainer();
+    }
+
     const div = document.createElement('div');
     div.id = CONTAINER_ID;
-    parent.appendChild(div);
+    parent.insertBefore(div, target);
     return div;
 }
 
@@ -111,13 +121,12 @@ function ensureFallbackContainer(): HTMLElement {
 export function mountPanel(fm: FrontMatterResult): void {
     console.log(`[FM-DEBUG] mountPanel called, fm.raw:`, fm.raw.slice(0, 80)); // DEBUG
     const sidebar = findSidebar();
-    container = sidebar
-        ? ensureContainerIn(sidebar)
-        : ensureFallbackContainer();
+    const c = sidebar ? ensureContainerBefore(sidebar) : ensureFallbackContainer();
+    container = c;
 
-    console.log(`[FM-DEBUG] container element:`, container); // DEBUG
+    console.log(`[FM-DEBUG] container element:`, c); // DEBUG
     if (!root) {
-        root = createRoot(container);
+        root = createRoot(c);
     }
     root.render(createElement(FrontMatterPanel, fm));
     console.log(`[FM-DEBUG] root.render() called`); // DEBUG
