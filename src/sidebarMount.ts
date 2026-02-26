@@ -24,24 +24,17 @@ import type { FrontMatterResult } from './frontMatterExtractor';
 const CONTAINER_ID = 'growi-plugin-front-matter-viewer-container';
 
 /**
- * サイドバーとして試みるセレクタの候補リスト（優先度順）。
- * GROWI のバージョンアップで変わる可能性があるため、実際のDOMを確認して調整すること。
- */
-/**
- * 実機確認で動作したセレクタを先頭に置く（優先度順）。
- * ここで見つかった要素の「直前」にコンテナを挿入する。
+ * 挿入基準となる要素のセレクタ候補（優先度順）。
+ * 見つかった要素の「直前（兄弟）」にコンテナを挿入する。
+ * GROWI のバージョンアップで変わる可能性があるため実機DOMで確認すること。
  */
 const SIDEBAR_SELECTORS = [
-    '[class*="TableOfContents"]',
+    '#revision-toc',                  // 実機確認済み（優先）
+    '[class*="TableOfContents"]',     // クラス名にハッシュが付く場合のフォールバック
     '[data-testid="grw-sidebar-contents-scroll-container"]',
     '[data-testid="grw-side-contents"]',
     '#grw-sidebar-contents',
     '.grw-sidebar-contents-scroll-container',
-    '.grw-sidebar',
-    '#grw-sidebar',
-    '.revision-toc-container',
-    '.page-side-contents',
-    '#revision-toc',
 ];
 
 // ─── モジュールスコープ状態 ───────────────────────────────────────
