@@ -34,6 +34,7 @@ const SIDEBAR_SELECTORS = [
     '.grw-sidebar-contents-scroll-container',
     '.grw-sidebar',
     '#grw-sidebar',
+    ' d-flex flex-column gap-2',
 ];
 
 // ─── モジュールスコープ状態 ───────────────────────────────────────
