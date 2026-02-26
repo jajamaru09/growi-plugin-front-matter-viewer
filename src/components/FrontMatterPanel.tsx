@@ -13,7 +13,7 @@ type ViewMode = 'table' | 'yaml';
 
 interface Props {
     raw: string;
-    parsed: Record<string, unknown>;
+    parsed: Record<string, unknown> | unknown[];
 }
 
 // ─── スタイル定数 ─────────────────────────────────────────────────
@@ -184,9 +184,44 @@ function renderValue(value: unknown, depth = 0): React.ReactNode {
 
 // ─── メインコンポーネント ─────────────────────────────────────────
 
+/** root が Mapping（オブジェクト）のテーブル描画 */
+function renderMappingTable(parsed: Record<string, unknown>): React.ReactNode {
+    return (
+        <table style={S.table}>
+            <tbody>
+                {Object.entries(parsed).map(([key, value]) => (
+                    <tr key={key}>
+                        <th style={S.th}>{key}</th>
+                        <td style={S.td}>{renderValue(value)}</td>
+                    </tr>
+                ))}
+            </tbody>
+        </table>
+    );
+}
+
+/** root が Sequence（配列）のテーブル描画 */
+function renderSequenceTable(parsed: unknown[]): React.ReactNode {
+    return (
+        <table style={S.table}>
+            <tbody>
+                {parsed.map((item, i) => (
+                    <tr key={i}>
+                        <th style={{ ...S.th, width: '20px', color: '#adb5bd' }}>{i}</th>
+                        <td style={S.td}>{renderValue(item)}</td>
+                    </tr>
+                ))}
+            </tbody>
+        </table>
+    );
+}
+
 export function FrontMatterPanel({ raw, parsed }: Props) {
     const [mode, setMode] = useState<ViewMode>('table');
-    const hasTable = Object.keys(parsed).length > 0;
+    const isArray = Array.isArray(parsed);
+    const hasTable = isArray
+        ? (parsed as unknown[]).length > 0
+        : Object.keys(parsed as Record<string, unknown>).length > 0;
 
     return (
         <div style={S.panel}>
@@ -213,16 +248,9 @@ export function FrontMatterPanel({ raw, parsed }: Props) {
             <div style={S.body}>
                 {mode === 'table' ? (
                     hasTable ? (
-                        <table style={S.table}>
-                            <tbody>
-                                {Object.entries(parsed).map(([key, value]) => (
-                                    <tr key={key}>
-                                        <th style={S.th}>{key}</th>
-                                        <td style={S.td}>{renderValue(value)}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                        isArray
+                            ? renderSequenceTable(parsed as unknown[])
+                            : renderMappingTable(parsed as Record<string, unknown>)
                     ) : (
                         // パース失敗時はYAML生文字列を表示
                         <pre style={S.pre}>{raw}</pre>

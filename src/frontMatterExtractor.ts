@@ -13,8 +13,13 @@ import { parse } from 'yaml';
 export interface FrontMatterResult {
     /** フロントマター部分の生のYAML文字列（"---" を含まない） */
     raw: string;
-    /** YAMLをパースしたオブジェクト。パース失敗時は空オブジェクト */
-    parsed: Record<string, unknown>;
+    /**
+     * YAMLをパースした値。
+     * - Mapping（通常のキーバリュー）: Record<string, unknown>
+     * - Sequence（- item 形式の root 配列）: unknown[]
+     * - パース失敗時: {}
+     */
+    parsed: Record<string, unknown> | unknown[];
 }
 
 // ─── メイン関数 ───────────────────────────────────────────────────
@@ -41,12 +46,13 @@ export function extractFrontMatter(body: string): FrontMatterResult | null {
     try {
         const parsed = parse(raw);
         console.log(`[FM-DEBUG] yaml parse result type:`, typeof parsed, Array.isArray(parsed) ? '(array)' : ''); // DEBUG
-        // フロントマターのルートはキーバリューオブジェクトであることを期待する
-        if (parsed == null || typeof parsed !== 'object' || Array.isArray(parsed)) {
-            console.log(`[FM-DEBUG] parsed is not a plain object → return null`); // DEBUG
+        // null やスカラー値（文字列・数値・真偽値）は表示できないため除外する。
+        // Mapping（object）と Sequence（array）はどちらも許可する。
+        if (parsed == null || typeof parsed !== 'object') {
+            console.log(`[FM-DEBUG] parsed is null or scalar → return null`); // DEBUG
             return null;
         }
-        return { raw, parsed: parsed as Record<string, unknown> };
+        return { raw, parsed: parsed as Record<string, unknown> | unknown[] };
     } catch (e) {
         console.warn(`[FM-DEBUG] yaml parse error:`, e); // DEBUG
         // YAMLパース失敗時は生文字列だけ返す（表示で使える）
