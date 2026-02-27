@@ -129,6 +129,12 @@ const S = {
         background: 'var(--bs-secondary-bg)',
         color: 'var(--bs-secondary-color)',
     } as React.CSSProperties,
+
+    link: {
+        color: 'rgba(var(--grw-wiki-link-color-rgb, var(--bs-link-color-rgb)), var(--bs-link-opacity, 1))',
+        textDecorationColor: 'rgba(var(--grw-wiki-link-color-rgb, var(--bs-link-color-rgb)), var(--bs-link-underline-opacity, 1))',
+        WebkitTextDecorationColor: 'rgba(var(--grw-wiki-link-color-rgb, var(--bs-link-color-rgb)), var(--bs-link-underline-opacity, 1))',
+    } as React.CSSProperties,
 };
 
 // ─── ヘルパー ─────────────────────────────────────────────────────
@@ -156,7 +162,7 @@ function linkify(text: string): React.ReactNode {
         }
         const url = match[0];
         parts.push(
-            <a key={match.index} href={url} target="_blank" rel="noopener noreferrer">
+            <a key={match.index} href={url} target="_blank" rel="noopener noreferrer" style={S.link}>
                 {url}
             </a>
         );
