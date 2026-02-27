@@ -139,6 +139,34 @@ const S = {
  */
 const isPrimitive = (v: unknown): boolean => v === null || typeof v !== 'object';
 
+const URL_RE = /https?:\/\/[^\s,<>"']+/g;
+
+/**
+ * テキストをパースして URL 部分を <a> タグに変換した React ノード配列を返す。
+ * URL が含まれない場合は文字列をそのまま返す。
+ */
+function linkify(text: string): React.ReactNode {
+    const parts: React.ReactNode[] = [];
+    let last = 0;
+    let match: RegExpExecArray | null;
+    URL_RE.lastIndex = 0;
+    while ((match = URL_RE.exec(text)) !== null) {
+        if (match.index > last) {
+            parts.push(text.slice(last, match.index));
+        }
+        const url = match[0];
+        parts.push(
+            <a key={match.index} href={url} target="_blank" rel="noopener noreferrer">
+                {url}
+            </a>
+        );
+        last = match.index + url.length;
+    }
+    if (parts.length === 0) return text;
+    if (last < text.length) parts.push(text.slice(last));
+    return <>{parts}</>;
+}
+
 // ─── 値のレンダリング（再帰） ─────────────────────────────────────
 
 /**
@@ -163,7 +191,7 @@ function renderValue(value: unknown): React.ReactNode {
 
     // number / string（プリミティブ）
     if (typeof value !== 'object') {
-        return String(value);
+        return linkify(String(value));
     }
 
     // 配列
@@ -172,7 +200,8 @@ function renderValue(value: unknown): React.ReactNode {
 
         // すべてプリミティブなら1行で表示（Date は inline 表示が不自然なためネストにする）
         if (value.every(isPrimitive)) {
-            return value.map(String).join(', ');
+            const text = value.map(String).join(', ');
+            return linkify(text);
         }
 
         // 複雑な要素があればネストしたテーブル
