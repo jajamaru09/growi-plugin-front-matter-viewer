@@ -10,6 +10,7 @@
 
 import {
     extractPageId,
+    isRootPage,
     type GrowiPageContext, type PageMode,
 } from './pageContext';
 
@@ -87,12 +88,18 @@ export function createPageChangeListener(callback: PageChangeCallback): {
      */
     function onNavigate(e: any): void {
         const dest = new URL(e.destination.url);
+        const mode = hashToMode(dest.hash);
+        // ルートページの場合は空文字列の pageId で発火
+        if (isRootPage(dest.pathname)) {
+            tryFire('', mode);
+            return;
+        }
         // pageId URL でなければ（管理画面など）無視する
         const pageId = extractPageId(dest.pathname);
         if (!pageId) return;
         // ?revisionId=〈id〉 があれば過去リビジョン、なければ最新版
         const revisionId = dest.searchParams.get('revisionId') ?? undefined;
-        tryFire(pageId, hashToMode(dest.hash), revisionId);
+        tryFire(pageId, mode, revisionId);
     }
 
     /**
@@ -111,10 +118,14 @@ export function createPageChangeListener(callback: PageChangeCallback): {
         // navigate イベントは初回ページロード時には発火しないため、
         // 現在のURLを参照して初回のコールバックを手動で発火する
         const { pathname, hash } = location;
-        const pageId = extractPageId(pathname);
-        if (pageId) {
-            const revisionId = new URL(location.href).searchParams.get('revisionId') ?? undefined;
-            tryFire(pageId, hashToMode(hash), revisionId);
+        if (isRootPage(pathname)) {
+            tryFire('', hashToMode(hash));
+        } else {
+            const pageId = extractPageId(pathname);
+            if (pageId) {
+                const revisionId = new URL(location.href).searchParams.get('revisionId') ?? undefined;
+                tryFire(pageId, hashToMode(hash), revisionId);
+            }
         }
     }
 

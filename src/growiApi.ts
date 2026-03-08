@@ -5,6 +5,23 @@
  * APIに渡す際は先頭の "/" を除いた24桁の ID を使用する。
  */
 
+interface PageResponse {
+  page: { _id: string };
+}
+
+/**
+ * パスからページIDを取得する。
+ * ルートページ（/）など、URLにpageIdが含まれない場合に使用する。
+ */
+export async function fetchPageIdByPath(path: string): Promise<string> {
+    const res = await fetch(`/_api/v3/page/?path=${encodeURIComponent(path)}`);
+    if (!res.ok) {
+        throw new Error(`ページ情報の取得に失敗しました: ${res.status}`);
+    }
+    const data: PageResponse = await res.json();
+    return data.page._id;
+}
+
 /**
  * 指定したページのMarkdown本文を取得する。
  * revisionId がある場合は過去リビジョン、なければ最新版を返す。

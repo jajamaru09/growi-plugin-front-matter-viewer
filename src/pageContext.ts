@@ -32,11 +32,19 @@ const PAGE_ID_RE = /^\/([0-9a-f]{24})$/i;
 // ─── ユーティリティ関数 ───────────────────────────────────────────
 
 /**
+ * pathname がルートページ（/）かどうかを判定する。
+ */
+export function isRootPage(pathname: string): boolean {
+  return pathname === '/';
+}
+
+/**
  * pathname が GROWI の pageId URL（/〈24桁hex〉）かどうかを判定する。
  * 管理画面(/admin)や検索ページ(/search)などでは false を返す。
+ * ルートページ（/）も有効なページとして扱う。
  */
 export function isPageIdUrl(pathname: string): boolean {
-  return PAGE_ID_RE.test(pathname);
+  return PAGE_ID_RE.test(pathname) || isRootPage(pathname);
 }
 
 /**

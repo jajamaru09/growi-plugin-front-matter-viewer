@@ -8,7 +8,7 @@
 
 import { createPageChangeListener } from './src/growiNavigation';
 import type { GrowiPageContext } from './src/pageContext';
-import { fetchPageBody } from './src/growiApi';
+import { fetchPageBody, fetchPageIdByPath } from './src/growiApi';
 import { extractFrontMatter } from './src/frontMatterExtractor';
 import { mountPanel, unmountPanel } from './src/sidebarMount';
 
@@ -35,7 +35,18 @@ async function handlePageChange(ctx: GrowiPageContext): Promise<void> {
         return;
     }
 
-    const body = await fetchPageBody(ctx.pageId, ctx.revisionId);
+    // ルートページの場合はAPIでpageIdを解決する
+    let pageId = ctx.pageId;
+    if (!pageId || pageId === '/') {
+        try {
+            pageId = `/${await fetchPageIdByPath('/')}`;
+        } catch {
+            unmountPanel();
+            return;
+        }
+    }
+
+    const body = await fetchPageBody(pageId, ctx.revisionId);
     if (!body) {
         unmountPanel();
         return;
