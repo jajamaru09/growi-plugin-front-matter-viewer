@@ -5,7 +5,7 @@
  * 表形式はネストした構造も再帰的にレンダリングする。
  */
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 
 // ─── 型定義 ───────────────────────────────────────────────────────
 
@@ -29,8 +29,21 @@ const BASE_BTN: React.CSSProperties = {
     cursor: 'pointer',
 };
 
+/** コンパクト表示の高さ */
+const COMPACT_HEIGHT = 200;
+/** オーバーレイが消えるまでの遅延 (ms) */
+const HOVER_LEAVE_DELAY = 300;
+
 const S = {
-    panel: {
+    /** position: relative のラッパー。コンパクト時の高さを確保しレイアウトに参加する */
+    wrapper: {
+        position: 'relative',
+        margin: '8px 0',
+        height: `${COMPACT_HEIGHT}px`,
+    } as React.CSSProperties,
+
+    /** 折りたたみ時のパネル（ラッパーなしで通常フロー） */
+    collapsedPanel: {
         margin: '8px 0',
         border: '1px solid var(--bs-border-color)',
         borderRadius: '4px',
@@ -40,6 +53,32 @@ const S = {
         background: 'var(--bs-body-bg)',
         color: 'var(--bs-body-color)',
     } as React.CSSProperties,
+
+    panel: (expanded: boolean): React.CSSProperties => ({
+        border: '1px solid var(--bs-border-color)',
+        borderRadius: '4px',
+        fontSize: '12px',
+        fontFamily: 'inherit',
+        overflow: 'hidden',
+        background: 'var(--bs-body-bg)',
+        color: 'var(--bs-body-color)',
+        ...(expanded
+            ? {
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  zIndex: 1000,
+                  boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
+              }
+            : {
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: `${COMPACT_HEIGHT}px`,
+              }),
+    }),
 
     header: {
         display: 'flex',
@@ -80,11 +119,12 @@ const S = {
         transition: 'transform 0.2s ease',
     }),
 
-    body: {
+    body: (expanded: boolean): React.CSSProperties => ({
         padding: '8px',
-        maxHeight: '400px',
-        overflowY: 'auto',
-    } as React.CSSProperties,
+        ...(expanded
+            ? { maxHeight: '80vh', overflowY: 'auto' as const }
+            : { overflow: 'hidden' as const }),
+    }),
 
     table: {
         width: '100%',
@@ -248,57 +288,79 @@ function renderValue(value: unknown): React.ReactNode {
 export function FrontMatterPanel({ raw, parsed }: Props) {
     const [mode, setMode] = useState<ViewMode>('table');
     const [collapsed, setCollapsed] = useState(false);
+    const [expanded, setExpanded] = useState(false);
+    const leaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const hasEntries = Array.isArray(parsed)
         ? parsed.length > 0
         : Object.keys(parsed).length > 0;
 
-    return (
-        <div style={S.panel}>
-            {/* ヘッダー */}
-            <div style={S.header}>
-                <span style={S.title}>Front Matter</span>
-                <div style={S.toggleGroup}>
-                    {!collapsed && (
-                        <>
-                            <button
-                                style={S.btn(mode === 'table')}
-                                onClick={() => setMode('table')}
-                            >
-                                Table
-                            </button>
-                            <button
-                                style={S.btn(mode === 'yaml')}
-                                onClick={() => setMode('yaml')}
-                            >
-                                YAML
-                            </button>
-                        </>
-                    )}
-                    <button
-                        style={S.chevron(collapsed)}
-                        onClick={() => setCollapsed((c) => !c)}
-                        title={collapsed ? '展開' : '折りたたむ'}
-                    >
-                        ▼
-                    </button>
-                </div>
-            </div>
+    const handleMouseEnter = useCallback(() => {
+        if (leaveTimer.current) {
+            clearTimeout(leaveTimer.current);
+            leaveTimer.current = null;
+        }
+        setExpanded(true);
+    }, []);
 
-            {/* 本文 */}
-            {!collapsed && (
-                <div style={S.body}>
-                    {mode === 'table' ? (
-                        hasEntries ? (
-                            renderValue(parsed)
-                        ) : (
-                            // パース失敗時はYAML生文字列を表示
-                            <pre style={S.pre}>{raw}</pre>
-                        )
-                    ) : (
-                        <pre style={S.pre}>{raw}</pre>
-                    )}
+    const handleMouseLeave = useCallback(() => {
+        leaveTimer.current = setTimeout(() => {
+            setExpanded(false);
+            leaveTimer.current = null;
+        }, HOVER_LEAVE_DELAY);
+    }, []);
+
+    return (
+        <div style={collapsed ? undefined : S.wrapper}>
+            <div
+                style={collapsed ? S.collapsedPanel : S.panel(expanded)}
+                onMouseEnter={collapsed ? undefined : handleMouseEnter}
+                onMouseLeave={collapsed ? undefined : handleMouseLeave}
+            >
+                {/* ヘッダー */}
+                <div style={S.header}>
+                    <span style={S.title}>Front Matter</span>
+                    <div style={S.toggleGroup}>
+                        {!collapsed && (
+                            <>
+                                <button
+                                    style={S.btn(mode === 'table')}
+                                    onClick={() => setMode('table')}
+                                >
+                                    Table
+                                </button>
+                                <button
+                                    style={S.btn(mode === 'yaml')}
+                                    onClick={() => setMode('yaml')}
+                                >
+                                    YAML
+                                </button>
+                            </>
+                        )}
+                        <button
+                            style={S.chevron(collapsed)}
+                            onClick={() => setCollapsed((c) => !c)}
+                            title={collapsed ? '展開' : '折りたたむ'}
+                        >
+                            ▼
+                        </button>
+                    </div>
                 </div>
-            )}
+
+                {/* 本文 */}
+                {!collapsed && (
+                    <div style={S.body(expanded)}>
+                        {mode === 'table' ? (
+                            hasEntries ? (
+                                renderValue(parsed)
+                            ) : (
+                                <pre style={S.pre}>{raw}</pre>
+                            )
+                        ) : (
+                            <pre style={S.pre}>{raw}</pre>
+                        )}
+                    </div>
+                )}
+            </div>
         </div>
     );
 }
