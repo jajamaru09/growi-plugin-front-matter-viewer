@@ -39,7 +39,6 @@ const S = {
     wrapper: {
         position: 'relative',
         margin: '8px 0',
-        height: `${COMPACT_HEIGHT}px`,
     } as React.CSSProperties,
 
     /** 折りたたみ時のパネル（ラッパーなしで通常フロー） */
@@ -72,11 +71,7 @@ const S = {
                   boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
               }
             : {
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  height: `${COMPACT_HEIGHT}px`,
+                  maxHeight: `${COMPACT_HEIGHT}px`,
               }),
     }),
 
