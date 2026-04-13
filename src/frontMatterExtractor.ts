@@ -1,0 +1,55 @@
+/**
+ * frontMatterExtractor.ts — Markdown 本文からフロントマターを抽出するユーティリティ
+ *
+ * フロントマターは文書先頭の "---" と "---" に囲まれたYAMLブロック。
+ * yaml パッケージを用いてパースし、構造化データを返す。
+ */
+
+import { parse } from 'yaml';
+
+// ─── 型定義 ───────────────────────────────────────────────────────
+
+/** extractFrontMatter の成功時の戻り値 */
+export interface FrontMatterResult {
+    /** フロントマター部分の生のYAML文字列（"---" を含まない） */
+    raw: string;
+    /**
+     * YAMLをパースした値。
+     * - Mapping（通常のキーバリュー）: Record<string, unknown>
+     * - Sequence（- item 形式の root 配列）: unknown[]
+     * - パース失敗時: {}
+     */
+    parsed: Record<string, unknown> | unknown[];
+}
+
+// ─── メイン関数 ───────────────────────────────────────────────────
+
+/**
+ * Markdown本文からフロントマターを抽出する。
+ *
+ * フロントマターが存在しない場合、またはルートがオブジェクトでない場合は null を返す。
+ * パースに失敗した場合は raw のみ設定して parsed は空オブジェクトで返す。
+ *
+ * @param body - ページのMarkdown本文
+ * @returns フロントマターの生文字列とパース結果。存在しなければ null
+ */
+export function extractFrontMatter(body: string): FrontMatterResult | null {
+    // 文書の先頭が "---" で始まり、次の "---" で閉じられているブロックを検出する
+    const match = body.match(/^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/);
+    if (!match) return null;
+
+    const raw = match[1];
+
+    try {
+        const parsed = parse(raw);
+        // null やスカラー値（文字列・数値・真偽値）は表示できないため除外する。
+        // Mapping（object）と Sequence（array）はどちらも許可する。
+        if (parsed == null || typeof parsed !== 'object') {
+            return null;
+        }
+        return { raw, parsed: parsed as Record<string, unknown> | unknown[] };
+    } catch {
+        // YAMLパース失敗時は生文字列だけ返す（表示で使える）
+        return { raw, parsed: {} };
+    }
+}
